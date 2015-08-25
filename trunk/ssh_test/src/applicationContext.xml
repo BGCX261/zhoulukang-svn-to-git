@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"	
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:aop="http://www.springframework.org/schema/aop"  
+    xmlns:tx="http://www.springframework.org/schema/tx"  
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd  
+ 
+	http://www.springframework.org/schema/aop   
+	http://www.springframework.org/schema/aop/spring-aop-2.5.xsd 
+	http://www.springframework.org/schema/tx   
+	http://www.springframework.org/schema/tx/spring-tx-2.5.xsd   
+	
+	">
+	
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="com.microsoft.jdbc.sqlserver.SQLServerDriver">
+		</property>
+		<property name="url"
+			value="jdbc:microsoft:sqlserver://localhost:1433;DatabaseName=test">
+		</property>
+		<property name="username" value="sa"></property>
+		<property name="password" value="sa"></property>
+	</bean>
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+		<property name="dataSource">
+			<ref bean="dataSource" />
+		</property>
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">
+					org.hibernate.dialect.SQLServerDialect
+				</prop>
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="hibernate.query.factory_class">org.hibernate.hql.classic.ClassicQueryTranslatorFactory</prop>
+			</props>
+		</property>
+		<property name="mappingResources">
+			<list>
+				<value>com/zlk/pojo/Users.hbm.xml</value>
+				<value>com/zlk/pojo/News.hbm.xml</value>
+			</list>
+		</property>
+	</bean>
+
+	
+	<!-- 指定事务管理器类，将sessionFactory注入，让该事务管理器具有打开和关闭事务的能力 -->
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<!-- 为事务管理器类指定匹配器，通过用name指定的匹配字符串进行对对应的方法进行打开和关闭事务 -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="delete*" propagation="REQUIRED" />
+			<tx:method name="modify*" propagation="REQUIRED" />
+			<tx:method name="deploy*" propagation="REQUIRED" />
+			<tx:method name="*" read-only="true" />
+		</tx:attributes>
+	</tx:advice>	
+
+	<!-- 为事务管理器类指定进行匹配的范围，到指定的地方通过匹配器字符串进行筛选，对应上后为该方法打开和关闭事务 -->
+	<aop:config proxy-target-class="true">
+		<aop:pointcut id="managerOperation" expression="execution(* com.zlk.dao.*.*(..))" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="managerOperation" />
+	</aop:config>
+	
+	<!-- //////////////////工      具     类////////////////// -->
+	<bean id="ZlkUtil" class="com.zlk.util.ZlkUtil"></bean>
+
+	<!-- //////////////////数据层开始////////////////// -->
+	<bean id="UsersDaoImpl" class="com.zlk.dao.impl.UsersDaoImpl">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	<bean id="NewsDaoImpl" class="com.zlk.dao.impl.NewsDaoImpl">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	<!-- //////////////////数据层结束////////////////// -->
+
+	<!-- //////////////////业务层开始////////////////// -->
+	<bean id="UserBusinessImpl" class="com.zlk.business.impl.UsersBusinessImpl">
+		<property name="usersDao" ref="UsersDaoImpl"></property>
+		<property name="zlkUtil" ref="ZlkUtil"></property>
+	</bean>
+	<bean id="NewsBusinessImpl" class="com.zlk.business.impl.NewsBusinessImpl">
+		<property name="newsDao" ref="NewsDaoImpl"></property>
+		<property name="zlkUtil" ref="ZlkUtil"></property>
+	</bean>
+	<!-- //////////////////业务层结束////////////////// -->
+
+
+	<!-- //////////////////控制层开始////////////////// -->
+	<bean name="/login" class="com.zlk.struts.action.LoginAction">
+		<property name="usersBusiness" ref="UserBusinessImpl"></property>
+	</bean>
+	<bean name="/news" class="com.zlk.struts.action.NewsAction">
+		<property name="newsBusiness" ref="NewsBusinessImpl"></property>
+	</bean>
+	<!-- //////////////////控制层结束////////////////// -->
+
+</beans>

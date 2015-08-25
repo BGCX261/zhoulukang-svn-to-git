@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.2//EN" "http://struts.apache.org/dtds/struts-config_1_2.dtd">
+
+<struts-config>
+  <data-sources />
+  <form-beans >
+    <form-bean name="loginForm" type="com.zlk.struts.form.LoginForm" />
+    <form-bean name="newsForm" type="com.zlk.struts.form.NewsForm" />
+
+
+  </form-beans>
+
+  <global-exceptions />
+  <global-forwards />
+  <action-mappings >
+    <action
+      attribute="loginForm"
+      name="loginForm"
+      parameter="methods"
+      path="/login"
+      scope="request"
+      type="com.zlk.struts.action.LoginAction">
+      <set-property property="cancellable" value="true" />
+    </action>
+    <action
+      attribute="newsForm"
+      name="newsForm"
+      parameter="method"
+      path="/news"
+      scope="request"
+      type="com.zlk.struts.action.NewsAction">
+      <set-property property="cancellable" value="true" />
+      <forward name="showone" path="/jsp/news_detail.jsp" />
+      <forward name="showall" path="/jsp/news_list.jsp" />
+    </action>
+  </action-mappings>
+  <!-- 使用Spring 的 DelegatingRequestProcessor 类 来代替struts的RequestProcessor类-->
+  <controller processorClass="org.springframework.web.struts.DelegatingRequestProcessor"/>
+  
+  <message-resources parameter="com.zlk.struts.ApplicationResources" />
+</struts-config>
+
